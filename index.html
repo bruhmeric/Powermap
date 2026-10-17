@@ -1,0 +1,283 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <title>LK Power Outage Tracker · Live Community Map of Sri Lanka</title>
+  <meta name="description" content="Real-time community power outage map for all 25 districts of Sri Lanka. Report outages and restorations, watch the map update live — free, open source, no accounts.">
+  <meta name="color-scheme" content="dark light">
+  <meta name="theme-color" content="#10141f">
+  <meta property="og:title" content="LK Power Outage Tracker">
+  <meta property="og:description" content="Live community power-cut map for Sri Lanka — report outages, track restorations, all 25 districts.">
+  <meta property="og:type" content="website">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <link rel="manifest" href="manifest.webmanifest">
+  <link rel="icon" type="image/svg+xml" href="assets/v1/favicon.svg">
+  <link rel="apple-touch-icon" href="assets/v1/icons/icon-180.png">
+  <script>try{if(JSON.parse(localStorage.getItem('lkpm.theme'))==='light')document.documentElement.dataset.theme='light';}catch(e){}</script>
+  <link rel="preconnect" href="https://basemaps.cartocdn.com" crossorigin>
+  <link rel="dns-prefetch" href="https://basemaps.cartocdn.com">
+  <link rel="stylesheet" href="assets/v1/css/leaflet.css">
+  <link rel="stylesheet" href="assets/v1/css/style.css">
+  <script defer src="assets/v1/js/leaflet.js"></script>
+  <script defer src="assets/v1/js/supabase.js"></script>
+  <script defer src="config.js"></script>
+  <script defer src="src/utils.js"></script>
+  <script defer src="src/districts.js"></script>
+  <script defer src="src/store.js"></script>
+  <script defer src="src/demo.js"></script>
+  <script defer src="src/db.js"></script>
+  <script defer src="src/map.js"></script>
+  <script defer src="src/ui.js"></script>
+  <script defer src="src/modals.js"></script>
+  <script defer src="src/app.js"></script>
+</head>
+<body>
+
+  <!-- SVG icon sprite (zero extra requests) -->
+  <svg xmlns="http://www.w3.org/2000/svg" style="position:absolute;width:0;height:0;overflow:hidden" aria-hidden="true">
+    <symbol id="i-bolt" viewBox="0 0 24 24"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></symbol>
+    <symbol id="i-menu" viewBox="0 0 24 24"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></symbol>
+    <symbol id="i-x" viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></symbol>
+    <symbol id="i-search" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></symbol>
+    <symbol id="i-sun" viewBox="0 0 24 24"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></symbol>
+    <symbol id="i-moon" viewBox="0 0 24 24"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></symbol>
+    <symbol id="i-share" viewBox="0 0 24 24"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></symbol>
+    <symbol id="i-download" viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></symbol>
+    <symbol id="i-sliders" viewBox="0 0 24 24"><line x1="4" y1="21" x2="4" y2="14"/><line x1="4" y1="10" x2="4" y2="3"/><line x1="12" y1="21" x2="12" y2="12"/><line x1="12" y1="8" x2="12" y2="3"/><line x1="20" y1="21" x2="20" y2="16"/><line x1="20" y1="12" x2="20" y2="3"/><line x1="1" y1="14" x2="7" y2="14"/><line x1="9" y1="8" x2="15" y2="8"/><line x1="17" y1="16" x2="23" y2="16"/></symbol>
+    <symbol id="i-info" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></symbol>
+    <symbol id="i-locate" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="22" y1="12" x2="18" y2="12"/><line x1="6" y1="12" x2="2" y2="12"/><line x1="12" y1="6" x2="12" y2="2"/><line x1="12" y1="22" x2="12" y2="18"/></symbol>
+    <symbol id="i-check" viewBox="0 0 24 24"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></symbol>
+    <symbol id="i-alert" viewBox="0 0 24 24"><path d="M10.29 3.86L0.36 20.91a1 1 0 0 0 0.87 1.37h21.55a1 1 0 0 0 0.87-1.37L13.71 3.86a1 1 0 0 0-1.74 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></symbol>
+    <symbol id="i-xc" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></symbol>
+    <symbol id="i-chevron" viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"/></symbol>
+    <symbol id="i-plus" viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></symbol>
+    <symbol id="i-copy" viewBox="0 0 24 24"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></symbol>
+    <symbol id="i-external" viewBox="0 0 24 24"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></symbol>
+    <symbol id="i-wifi-off" viewBox="0 0 24 24"><line x1="1" y1="1" x2="23" y2="23"/><path d="M16.72 11.06A10.94 10.94 0 0 1 19 12.55"/><path d="M5 12.55a10.94 10.94 0 0 1 5.17-2.39"/><path d="M10.71 5.05A16 16 0 0 1 22.58 9"/><path d="M1.42 9a15.91 15.91 0 0 1 4.7-2.88"/><path d="M8.53 16.11a6 6 0 0 1 6.95 0"/><line x1="12" y1="20" x2="12.01" y2="20"/></symbol>
+    <symbol id="i-refresh" viewBox="0 0 24 24"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"/></symbol>
+    <symbol id="i-activity" viewBox="0 0 24 24"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></symbol>
+  </svg>
+
+  <!-- Header -->
+  <header class="hdr">
+    <button id="menu-btn" class="icon-btn" aria-label="Toggle side panel" title="Toggle panel">
+      <svg class="ic"><use href="#i-menu"/></svg>
+    </button>
+    <div class="brand">
+      <svg class="brand-bolt" viewBox="0 0 64 64" aria-hidden="true"><polygon points="37,4 17,38 29,38 24,60 48,24 35,24 42,4" fill="currentColor"/></svg>
+      <h1>LK Power <span class="brand-accent">Outage Tracker</span></h1>
+      <span id="mode-badge" class="badge" hidden>DEMO</span>
+    </div>
+    <div id="conn" class="conn" title="Realtime connection status">
+      <span id="conn-dot" class="conn-dot connecting"></span><span id="conn-label">Connecting…</span>
+    </div>
+    <div id="header-stats" class="hdr-stats" aria-live="polite">
+      <div class="stat"><span class="stat-num out" id="stat-active">–</span><span class="stat-lbl">active</span></div>
+      <div class="stat"><span class="stat-num res" id="stat-restored">–</span><span class="stat-lbl">restored</span></div>
+      <div class="stat"><span class="stat-num" id="stat-districts">–</span><span class="stat-lbl">districts</span></div>
+      <div class="stat"><span class="stat-num" id="stat-reports">–</span><span class="stat-lbl">reports</span></div>
+    </div>
+    <div class="hdr-actions">
+      <button id="theme-btn" class="icon-btn" aria-label="Toggle light or dark theme" title="Theme (T)"><svg class="ic"><use href="#i-moon"/></svg></button>
+      <button id="share-btn" class="icon-btn" aria-label="Share this map" title="Share"><svg class="ic"><use href="#i-share"/></svg></button>
+      <div class="export-wrap">
+        <button id="export-btn" class="icon-btn" aria-label="Export data" title="Export CSV / JSON" aria-haspopup="true" aria-expanded="false"><svg class="ic"><use href="#i-download"/></svg></button>
+        <div id="export-menu" class="popover" hidden>
+          <button type="button" data-export="csv"><svg class="ic"><use href="#i-download"/></svg>Export CSV <span class="pop-sub">filtered view</span></button>
+          <button type="button" data-export="json"><svg class="ic"><use href="#i-download"/></svg>Export JSON <span class="pop-sub">filtered view</span></button>
+        </div>
+      </div>
+      <button id="settings-btn" class="icon-btn" aria-label="Database settings" title="Connect Supabase"><svg class="ic"><use href="#i-sliders"/></svg></button>
+      <button id="about-btn" class="icon-btn" aria-label="About and help" title="About (A)"><svg class="ic"><use href="#i-info"/></svg></button>
+    </div>
+  </header>
+
+  <div class="app-body">
+
+    <div id="sidebar-backdrop" class="sidebar-backdrop" hidden></div>
+
+    <!-- Side panel: filters, stats, live feed -->
+    <aside id="sidebar" class="sidebar" aria-label="Reports panel">
+      <div class="side-sec">
+        <div class="sec-title-row">
+          <h2>Filters</h2>
+          <button id="clear-filters" class="link-btn" hidden>Clear all</button>
+        </div>
+        <div class="chip-row" id="filter-window" role="group" aria-label="Time window">
+          <button type="button" class="chip" data-window="1h">1h</button>
+          <button type="button" class="chip" data-window="6h">6h</button>
+          <button type="button" class="chip active" data-window="24h">24h</button>
+          <button type="button" class="chip" data-window="7d">7d</button>
+          <button type="button" class="chip" data-window="all">All</button>
+        </div>
+        <div class="chip-row" id="filter-status" role="group" aria-label="Status filter">
+          <button type="button" class="chip active" data-status="all">All</button>
+          <button type="button" class="chip st-out" data-status="outage">Outages</button>
+          <button type="button" class="chip st-res" data-status="restored">Restored</button>
+        </div>
+        <select id="district-select" class="select" aria-label="Filter by district">
+          <option value="">All districts</option>
+        </select>
+        <div class="search-box">
+          <svg class="ic search-ic"><use href="#i-search"/></svg>
+          <input id="search-input" type="search" placeholder="Search area or district…  ( / )" autocomplete="off" spellcheck="false" aria-label="Search reports">
+          <button id="search-clear" class="search-clear" hidden aria-label="Clear search"><svg class="ic"><use href="#i-x"/></svg></button>
+          <div id="search-results" class="search-results" hidden></div>
+        </div>
+      </div>
+
+      <div class="side-sec">
+        <div class="sec-title-row">
+          <h2><svg class="ic"><use href="#i-activity"/></svg> Reports · last 24h</h2>
+          <span id="synced-ago" class="synced-ago"></span>
+        </div>
+        <canvas id="sparkline" width="280" height="44" aria-hidden="true"></canvas>
+        <div id="top-districts" class="top-districts"></div>
+      </div>
+
+      <div class="side-sec feed-sec">
+        <div class="sec-title-row">
+          <h2>Live activity</h2>
+          <span id="feed-count" class="feed-count"></span>
+        </div>
+        <ul id="feed-list" class="feed-list" aria-live="polite"></ul>
+        <div id="feed-empty" class="empty" hidden>No reports match your filters.</div>
+      </div>
+    </aside>
+
+    <!-- Map + report panel -->
+    <main class="map-wrap">
+      <div id="map" role="application" aria-label="Interactive outage map — click anywhere to pick a report location"></div>
+
+      <div id="map-note" class="map-note" hidden></div>
+
+      <div class="legend" aria-hidden="true">
+        <span><i class="lg lg-out"></i>Outage</span>
+        <span><i class="lg lg-res"></i>Restored</span>
+        <span><i class="lg lg-faded"></i>&gt;24h</span>
+      </div>
+
+      <button id="fab-report" class="fab" aria-label="Open report form">
+        <svg class="ic"><use href="#i-plus"/></svg><span>Report</span>
+      </button>
+
+      <section id="report-panel" class="report-panel" aria-label="Report grid status">
+        <div class="rp-head">
+          <h2><svg class="ic"><use href="#i-bolt"/></svg> Report grid status</h2>
+          <button id="rp-collapse" class="icon-btn sm" aria-label="Collapse report panel" title="Collapse"><svg class="ic"><use href="#i-chevron"/></svg></button>
+        </div>
+        <form id="report-form" class="rp-body" novalidate>
+          <div class="field">
+            <label for="district">District</label>
+            <select id="district" class="select" required>
+              <option value="">Select district</option>
+            </select>
+            <small class="f-err" id="err-district" hidden>Select a district.</small>
+          </div>
+          <div class="field">
+            <label for="area">Area / town name</label>
+            <input id="area" type="text" placeholder="e.g. Maharagama, Nugegoda" maxlength="60" required autocomplete="off">
+            <small class="f-err" id="err-area" hidden>Enter an area or town name.</small>
+          </div>
+          <div class="field">
+            <label>Coordinates</label>
+            <div class="coord-row">
+              <input id="lat" type="text" placeholder="Latitude" readonly required aria-label="Latitude">
+              <input id="lng" type="text" placeholder="Longitude" readonly required aria-label="Longitude">
+              <button type="button" id="geolocate-btn" class="icon-btn" aria-label="Use my current location" title="Use my location"><svg class="ic"><use href="#i-locate"/></svg></button>
+            </div>
+            <small class="f-hint">Click the map (or the locate button) to set a precise pin.</small>
+            <small class="f-err" id="err-coords" hidden>Set a location on the map first.</small>
+          </div>
+          <div class="rp-actions">
+            <button type="button" id="btn-outage" class="btn btn-out"><span class="dot"></span>Report outage</button>
+            <button type="button" id="btn-restored" class="btn btn-res"><span class="dot"></span>Power restored</button>
+          </div>
+          <div class="rate-note" id="rate-note" hidden></div>
+        </form>
+      </section>
+    </main>
+  </div>
+
+  <!-- Toasts -->
+  <div id="toasts" class="toasts" aria-live="polite"></div>
+
+  <!-- Setup modal -->
+  <div id="setup-modal" class="modal" hidden role="dialog" aria-modal="true" aria-labelledby="setup-title">
+    <div class="modal-card">
+      <button type="button" class="modal-close icon-btn" data-close-modal aria-label="Close"><svg class="ic"><use href="#i-x"/></svg></button>
+      <h2 id="setup-title">Connect your Supabase database</h2>
+      <p class="modal-sub">Without a database the map runs in <b>demo mode</b> with simulated data stored in your browser. Connect a free Supabase project to go live — it takes about 3 minutes.</p>
+      <ol class="setup-steps">
+        <li>Create a free project at <a href="https://supabase.com" target="_blank" rel="noopener">supabase.com <svg class="ic"><use href="#i-external"/></svg></a></li>
+        <li>Open the <b>SQL Editor</b> and run the setup script <button type="button" id="sql-copy" class="link-btn"><svg class="ic"><use href="#i-copy"/></svg>Copy SQL</button></li>
+        <li>Copy the <b>Project URL</b> and <b>anon public key</b> from Settings → API</li>
+        <li>Paste them below and press <b>Test connection</b></li>
+      </ol>
+      <div class="field">
+        <label for="supa-url">Project URL</label>
+        <input id="supa-url" type="url" placeholder="https://xxxxxxxxxxxx.supabase.co" spellcheck="false" autocomplete="off">
+      </div>
+      <div class="field">
+        <label for="supa-key">Anon public key</label>
+        <input id="supa-key" type="text" placeholder="eyJhbGciOiJIUzI1NiIsInR5cCI6…" spellcheck="false" autocomplete="off">
+      </div>
+      <div id="setup-status" class="setup-status" role="status"></div>
+      <div class="modal-actions">
+        <button type="button" id="setup-validate" class="btn btn-ghost">Test connection</button>
+        <button type="button" id="setup-save" class="btn btn-primary" disabled>Save &amp; reload</button>
+      </div>
+      <div class="modal-foot">
+        <button type="button" id="setup-demo" class="link-btn">Keep using demo mode</button>
+        <button type="button" id="setup-reset" class="link-btn danger" hidden>Reset saved config</button>
+      </div>
+      <p class="privacy-note">The anon key is designed to be public — the table is protected by Row Level Security rules that only allow reading and creating reports (no edits, no deletes).</p>
+    </div>
+  </div>
+
+  <!-- About modal -->
+  <div id="about-modal" class="modal" hidden role="dialog" aria-modal="true" aria-labelledby="about-title">
+    <div class="modal-card about-card">
+      <button type="button" class="modal-close icon-btn" data-close-modal aria-label="Close"><svg class="ic"><use href="#i-x"/></svg></button>
+      <h2 id="about-title">About this map</h2>
+      <div class="about-sec">
+        <h3>What is this?</h3>
+        <p>A free, community-powered map of electricity outages across all 25 districts of Sri Lanka. Anyone can report an outage or a restoration in a few taps — no account needed — and reports appear on the map for everyone in real time via WebSockets.</p>
+      </div>
+      <div class="about-sec">
+        <h3>How the numbers work</h3>
+        <p><b>Active outages</b> counts ~1 km grid cells whose latest report is an outage, so an area that was reported and later restored isn't double-counted. Markers fade as reports age, and outage reports older than 24 hours are dimmed as possibly outdated.</p>
+      </div>
+      <div class="about-sec">
+        <h3>Keyboard shortcuts</h3>
+        <table class="keys">
+          <tr><td><kbd>/</kbd> or <kbd>F</kbd></td><td>Focus search</td></tr>
+          <tr><td><kbd>T</kbd></td><td>Toggle light / dark theme</td></tr>
+          <tr><td><kbd>N</kbd></td><td>New report</td></tr>
+          <tr><td><kbd>A</kbd></td><td>About &amp; help</td></tr>
+          <tr><td><kbd>Esc</kbd></td><td>Close dialogs</td></tr>
+        </table>
+      </div>
+      <div class="about-sec">
+        <h3>Privacy &amp; data</h3>
+        <p>Reports are anonymous — no accounts and no IP logging. Your Supabase credentials (if configured) are stored only in your own browser. Submissions are rate-limited to one per 5 minutes per browser to discourage spam.</p>
+      </div>
+      <div class="about-sec">
+        <h3>Credits &amp; disclaimer</h3>
+        <p>Map tiles © <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">OpenStreetMap</a> contributors and © <a href="https://carto.com/attributions" target="_blank" rel="noopener">CARTO</a>. Built with Leaflet and Supabase. This is an unofficial community tool, not affiliated with CEB or LECO — for official information refer to your electricity supplier.</p>
+      </div>
+      <div class="about-sec setup-link">
+        <button type="button" class="btn btn-primary" data-open-setup>Connect Supabase →</button>
+      </div>
+    </div>
+  </div>
+
+  <noscript>
+    <div style="position:fixed;inset:0;background:#0b0f19;color:#e7ecf5;display:flex;align-items:center;justify-content:center;text-align:center;padding:2rem;font-family:system-ui,sans-serif;z-index:9999">
+      <p>This map needs JavaScript to run. Please enable JavaScript and reload.</p>
+    </div>
+  </noscript>
+</body>
+</html>

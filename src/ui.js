@@ -124,7 +124,8 @@
       if (e.key === 'Enter') {
         e.preventDefault();
         var first = els.searchResults.querySelector('.sr-item');
-        if (first) first.click();
+        /* results are picked via 'mousedown' (beats the blur handler) — dispatch the same event */
+        if (first) first.dispatchEvent(new MouseEvent('mousedown', { bubbles: true, cancelable: true }));
       } else if (e.key === 'Escape') {
         hideResults();
         els.searchInput.blur();

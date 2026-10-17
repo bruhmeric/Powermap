@@ -56,7 +56,7 @@
       store.setLastSync(Date.now());
       db.subscribe(onRealtime, null);
       setTimeout(function () {
-        util.toast('<b>Demo mode</b> — showing simulated data. Connect a free Supabase project (⚙) to go live.', 'info', 7000);
+        util.toast('<b>Demo mode</b> — showing simulated data. The administrator can go live by adding Supabase credentials to config.js.', 'info', 7000);
       }, 900);
     } else {
       var cfg = ns.db.loadConfig();
@@ -159,7 +159,7 @@
     }
     util.toast('Locating you…', 'info', 2200);
     navigator.geolocation.getCurrentPosition(function (pos) {
-      var latlng = L.latLng(pos.coords.latitude, pos.coords.longitude);
+      var latlng = { lat: pos.coords.latitude, lng: pos.coords.longitude };
       ns.map.flyTo(latlng, Math.max(12, 12));
       handleMapSelect(latlng);
     }, function (err) {

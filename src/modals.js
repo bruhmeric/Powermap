@@ -1,5 +1,9 @@
 /* LK Power Outage Tracker — modals (namespace: LKPM.modals)
-   Setup wizard for connecting Supabase + the About/help dialog. */
+   Read-only "Database & connection" info panel + the About/help dialog.
+
+   There is deliberately NO credential input anywhere in this app:
+   credentials live only in config.js (set by the administrator).
+   This modal just shows the current status and how to go live. */
 (function (ns) {
   'use strict';
   var util = ns.util;
@@ -41,14 +45,7 @@
   var els = {};
 
   function init() {
-    els = {
-      setup: util.$('#setup-modal'), about: util.$('#about-modal'),
-      url: util.$('#supa-url'), key: util.$('#supa-key'),
-      status: util.$('#setup-status'),
-      validate: util.$('#setup-validate'), save: util.$('#setup-save'),
-      demo: util.$('#setup-demo'), reset: util.$('#setup-reset'),
-      sqlCopy: util.$('#sql-copy')
-    };
+    els = { setup: util.$('#setup-modal'), about: util.$('#about-modal'), sqlCopy: util.$('#sql-copy') };
 
     util.$$('[data-close-modal]').forEach(function (b) {
       b.addEventListener('click', closeAll);
@@ -66,16 +63,6 @@
       b.addEventListener('click', function () { closeAll(); open('setup'); });
     });
 
-    els.validate.addEventListener('click', validate);
-    els.save.addEventListener('click', save);
-    els.demo.addEventListener('click', function () {
-      close(els.setup);
-      util.toast('Demo mode active — data is simulated locally in your browser.', 'info');
-    });
-    els.reset.addEventListener('click', function () {
-      ns.db.resetConfig();
-      location.reload();
-    });
     els.sqlCopy.addEventListener('click', function () {
       util.copyText(SETUP_SQL).then(function (ok) {
         util.toast(ok
@@ -84,53 +71,51 @@
           ok ? 'success' : 'error');
       });
     });
-
-    var cfg = ns.db.loadConfig();
-    if (cfg) {
-      els.url.value = cfg.url;
-      els.key.value = cfg.key;
-      els.reset.hidden = false;
-      els.save.disabled = false;
-    }
-
-    function inputsOk() {
-      return /^https:\/\/[a-z0-9-]+\.supabase\.co\/?$/i.test(els.url.value.trim()) && els.key.value.trim().length > 20;
-    }
-    [els.url, els.key].forEach(function (i) {
-      i.addEventListener('input', function () {
-        els.save.disabled = !inputsOk();
-        els.status.textContent = '';
-        els.status.className = 'setup-status';
-      });
-    });
   }
 
   function open(which) {
     var m = which === 'about' ? els.about : els.setup;
+    if (m === els.setup) renderStatus();
     m.hidden = false;
   }
   function close(m) { m.hidden = true; }
   function closeAll() { util.$$('.modal').forEach(close); }
 
-  function validate() {
-    els.validate.disabled = true;
-    els.status.className = 'setup-status';
-    els.status.textContent = 'Testing connection…';
-    ns.db.testConnection(els.url.value, els.key.value).then(function (res) {
-      els.validate.disabled = false;
-      els.status.className = 'setup-status ' + (res.ok ? 'ok' : 'bad');
-      els.status.textContent = res.message;
-      els.save.disabled = !res.ok;
-    });
-  }
+  /* ---------- read-only connection status ---------- */
 
-  function save() {
-    var url = els.url.value.trim().replace(/\/+$/, '');
-    var key = els.key.value.trim();
-    if (!url || !key) return;
-    ns.db.saveConfig(url, key);
-    util.toast('Configuration saved — reloading…', 'success');
-    setTimeout(function () { location.reload(); }, 650);
+  function renderStatus() {
+    var box = util.$('#conn-list');
+    if (!box) return;
+
+    var cfg = ns.db.loadConfig();
+    var c = window.LKPM_CONFIG || {};
+    var cartoKey = String(c.CARTO_API_KEY || '').trim();
+    var baseUrl = String(c.CARTO_API_BASE_URL || '').trim().replace(/^https?:\/\//, '');
+
+    var host = cfg ? cfg.url.replace(/^https?:\/\//, '') : '';
+    var rows = [
+      {
+        label: 'Data backend',
+        ok: !!cfg,
+        value: cfg
+          ? 'Supabase · <span class="mono">' + util.esc(host) + '</span>'
+          : 'Demo mode — <b>not configured</b>, data is simulated in your browser'
+      },
+      {
+        label: 'Basemap tiles',
+        ok: !!cartoKey,
+        value: cartoKey
+          ? 'CARTO · API key active' + (baseUrl ? ' · <span class="mono">' + util.esc(baseUrl) + '</span>' : '')
+          : 'CARTO key missing — set <b>CARTO_API_KEY</b> in config.js (tiles show a watermark without it)'
+      }
+    ];
+
+    box.innerHTML = rows.map(function (r) {
+      return '<li class="conn-row' + (r.ok ? ' ok' : '') + '">' +
+          '<span class="conn-lbl">' + util.esc(r.label) + '</span>' +
+          '<span class="conn-val">' + r.value + '</span>' +
+        '</li>';
+    }).join('');
   }
 
   ns.modals = { init: init, open: open, close: close, closeAll: closeAll, SETUP_SQL: SETUP_SQL };

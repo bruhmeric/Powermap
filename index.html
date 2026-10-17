@@ -17,10 +17,11 @@
   <link rel="apple-touch-icon" href="assets/v1/icons/icon-180.png">
   <script>try{if(JSON.parse(localStorage.getItem('lkpm.theme'))==='light')document.documentElement.dataset.theme='light';}catch(e){}</script>
   <link rel="preconnect" href="https://basemaps.cartocdn.com" crossorigin>
-  <link rel="dns-prefetch" href="https://basemaps.cartocdn.com">
-  <link rel="stylesheet" href="assets/v1/css/leaflet.css">
+  <link rel="preconnect" href="https://tiles.basemaps.cartocdn.com" crossorigin>
+  <link rel="dns-prefetch" href="https://tiles.basemaps.cartocdn.com">
+  <link rel="stylesheet" href="assets/v1/css/maplibre-gl.css">
   <link rel="stylesheet" href="assets/v1/css/style.css">
-  <script defer src="assets/v1/js/leaflet.js"></script>
+  <script defer src="assets/v1/js/maplibre-gl.js"></script>
   <script defer src="assets/v1/js/supabase.js"></script>
   <script defer src="config.js"></script>
   <script defer src="src/utils.js"></script>
@@ -89,7 +90,7 @@
           <button type="button" data-export="json"><svg class="ic"><use href="#i-download"/></svg>Export JSON <span class="pop-sub">filtered view</span></button>
         </div>
       </div>
-      <button id="settings-btn" class="icon-btn" aria-label="Database settings" title="Connect Supabase"><svg class="ic"><use href="#i-sliders"/></svg></button>
+      <button id="settings-btn" class="icon-btn" aria-label="Database and connection info" title="Database &amp; connection info"><svg class="ic"><use href="#i-sliders"/></svg></button>
       <button id="about-btn" class="icon-btn" aria-label="About and help" title="About (A)"><svg class="ic"><use href="#i-info"/></svg></button>
     </div>
   </header>
@@ -204,35 +205,20 @@
   <!-- Toasts -->
   <div id="toasts" class="toasts" aria-live="polite"></div>
 
-  <!-- Setup modal -->
+  <!-- Database & connection info modal (read-only — credentials are set in config.js) -->
   <div id="setup-modal" class="modal" hidden role="dialog" aria-modal="true" aria-labelledby="setup-title">
     <div class="modal-card">
       <button type="button" class="modal-close icon-btn" data-close-modal aria-label="Close"><svg class="ic"><use href="#i-x"/></svg></button>
-      <h2 id="setup-title">Connect your Supabase database</h2>
-      <p class="modal-sub">Without a database the map runs in <b>demo mode</b> with simulated data stored in your browser. Connect a free Supabase project to go live — it takes about 3 minutes.</p>
+      <h2 id="setup-title">Database &amp; connection</h2>
+      <p class="modal-sub">This deployment uses the credentials set once by the administrator in <code>config.js</code>. Credentials can't be entered, viewed or replaced from within the app — viewers always share the configured database.</p>
+      <ul id="conn-list" class="conn-list" aria-live="polite"></ul>
+      <h3 class="setup-h3">Going live (administrator only)</h3>
       <ol class="setup-steps">
         <li>Create a free project at <a href="https://supabase.com" target="_blank" rel="noopener">supabase.com <svg class="ic"><use href="#i-external"/></svg></a></li>
         <li>Open the <b>SQL Editor</b> and run the setup script <button type="button" id="sql-copy" class="link-btn"><svg class="ic"><use href="#i-copy"/></svg>Copy SQL</button></li>
         <li>Copy the <b>Project URL</b> and <b>anon public key</b> from Settings → API</li>
-        <li>Paste them below and press <b>Test connection</b></li>
+        <li>Paste both into <code>config.js</code>, then commit &amp; redeploy — every visitor shares that database</li>
       </ol>
-      <div class="field">
-        <label for="supa-url">Project URL</label>
-        <input id="supa-url" type="url" placeholder="https://xxxxxxxxxxxx.supabase.co" spellcheck="false" autocomplete="off">
-      </div>
-      <div class="field">
-        <label for="supa-key">Anon public key</label>
-        <input id="supa-key" type="text" placeholder="eyJhbGciOiJIUzI1NiIsInR5cCI6…" spellcheck="false" autocomplete="off">
-      </div>
-      <div id="setup-status" class="setup-status" role="status"></div>
-      <div class="modal-actions">
-        <button type="button" id="setup-validate" class="btn btn-ghost">Test connection</button>
-        <button type="button" id="setup-save" class="btn btn-primary" disabled>Save &amp; reload</button>
-      </div>
-      <div class="modal-foot">
-        <button type="button" id="setup-demo" class="link-btn">Keep using demo mode</button>
-        <button type="button" id="setup-reset" class="link-btn danger" hidden>Reset saved config</button>
-      </div>
       <p class="privacy-note">The anon key is designed to be public — the table is protected by Row Level Security rules that only allow reading and creating reports (no edits, no deletes).</p>
     </div>
   </div>
@@ -262,14 +248,14 @@
       </div>
       <div class="about-sec">
         <h3>Privacy &amp; data</h3>
-        <p>Reports are anonymous — no accounts and no IP logging. Your Supabase credentials (if configured) are stored only in your own browser. Submissions are rate-limited to one per 5 minutes per browser to discourage spam.</p>
+        <p>Reports are anonymous — no accounts and no IP logging. Database credentials are fixed by the administrator in <code>config.js</code>; this app has no credential inputs and never stores credentials in your browser. Submissions are rate-limited to one per 5 minutes per browser to discourage spam.</p>
       </div>
       <div class="about-sec">
         <h3>Credits &amp; disclaimer</h3>
-        <p>Map tiles © <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">OpenStreetMap</a> contributors and © <a href="https://carto.com/attributions" target="_blank" rel="noopener">CARTO</a>. Built with Leaflet and Supabase. This is an unofficial community tool, not affiliated with CEB or LECO — for official information refer to your electricity supplier.</p>
+        <p>Map tiles © <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">OpenStreetMap</a> contributors and © <a href="https://carto.com/attributions" target="_blank" rel="noopener">CARTO</a>. Built with MapLibre, CARTO and Supabase. This is an unofficial community tool, not affiliated with CEB or LECO — for official information refer to your electricity supplier.</p>
       </div>
       <div class="about-sec setup-link">
-        <button type="button" class="btn btn-primary" data-open-setup>Connect Supabase →</button>
+        <button type="button" class="btn btn-primary" data-open-setup>Database &amp; connection info →</button>
       </div>
     </div>
   </div>

@@ -1,9 +1,9 @@
 /* LK Power Outage Tracker — service worker
    Strategy:
-   - versioned static assets (/assets/v1/*, /src/*) → cache-first (immutable)
-   - app shell + config.js → network-first (edits land instantly)
+   - versioned vendor assets (/assets/v1/*) → cache-first (immutable)
+   - app shell, config.js and /src/* → network-first (edits land instantly)
    - Supabase API / Nominatim / map tiles → never intercepted (network only) */
-const VERSION = 'v1';
+const VERSION = 'v3';
 const CACHE = 'lkpm-' + VERSION;
 
 const SHELL = [
@@ -12,8 +12,8 @@ const SHELL = [
   './manifest.webmanifest',
   './config.js',
   './assets/v1/css/style.css',
-  './assets/v1/css/leaflet.css',
-  './assets/v1/js/leaflet.js',
+  './assets/v1/css/maplibre-gl.css',
+  './assets/v1/js/maplibre-gl.js',
   './assets/v1/js/supabase.js',
   './src/utils.js',
   './src/districts.js',

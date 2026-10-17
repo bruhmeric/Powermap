@@ -16,6 +16,6 @@
    Row Level Security (see supabase_setup.sql).
    ============================================================ */
 window.LKPM_CONFIG = {
-  SUPABASE_URL: '',
-  SUPABASE_ANON_KEY: ''
+  SUPABASE_URL: 'https://yxyxezeryemxgtascpmu.supabase.co',
+  SUPABASE_ANON_KEY: 'sb_publishable_Y3quZsoZTwCqxL0J9vFNdQ_7TyeWek7'
 };
